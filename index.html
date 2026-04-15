@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tg Tele Bot - Terms & Conditions</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        :root {
+            --bg-color: #050505;
+            --card-bg: #121212;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #3390ec;
+            --accent-glow: rgba(51, 144, 236, 0.4);
+            --danger: #ff4a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* --- Header & Logo --- */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .logo {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 25px var(--accent-glow);
+            animation: float 4s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* --- Sections --- */
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .section-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-card:hover {
+            border-color: #333;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.8);
+            transform: translateY(-2px);
+        }
+
+        h2 {
+            font-size: 18px;
+            color: var(--accent);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 14.5px;
+        }
+
+        ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* --- Danger/Alert Section --- */
+        .alert-box {
+            background: rgba(255, 74, 74, 0.05);
+            border: 1px solid rgba(255, 74, 74, 0.2);
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-box h2 {
+            color: var(--danger);
+        }
+
+        .alert-box h2::before {
+            background-color: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        /* --- Footer Links --- */
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid #222;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s ease-out;
+        }
+
+        .footer.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .links-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 300px;
+            background: linear-gradient(135deg, #2b2b2b, #1a1a1a);
+            color: #fff;
+            text-decoration: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #3390ec, #1c71c5);
+            border-color: #3390ec;
+            box-shadow: 0 0 15px var(--accent-glow);
+            transform: scale(1.02);
+        }
+
+        /* --- Animations --- */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <div class="header">
+            <img src="https://i.ibb.co/RxQq4mB/x.jpg" alt="Tg Tele Bot Logo" class="logo">
+            <h1>Tg Tele Bot</h1>
+            <p class="subtitle">Official Terms, Conditions & Usage Policies</p>
+        </div>
+
+        <!-- Section 1 -->
+        <div class="section-card">
+            <h2>How To Use Bot?</h2>
+            <ul>
+                <li>Navigate through the bot menu using the provided buttons.</li>
+                <li>Select the account category (Good or Cheap) based on your needs.</li>
+                <li>Ensure you have sufficient balance before initiating an order.</li>
+                <li>Follow on-screen instructions carefully to add the account to your Telegram app.</li>
+            </ul>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="section-card">
+            <h2>Payment Policy</h2>
+            <ul>
+                <li>USDT exchange rates are dynamic and may change without prior notice.</li>
+                <li>All funds added to the bot wallet are completely non-refundable.</li>
+                <li>Ensure you are sending exact amounts as requested by the bot.</li>
+            </ul>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="section-card alert-box">
+            <h2>Purchase & Warranties</h2>
+            <ul>
+                <li>We do <strong>not</strong> guarantee that any account is permanent.</li>
+                <li>Accounts may be logged out, banned, or restricted by Telegram based on your usage.</li>
+                <li>Cheap Quality accounts are primarily for temporary usage (ads, automation) and carry zero warranty.</li>
+            </ul>
+        </div>
+
+        <!-- Section 4 -->
+        <div class="section-card">
+            <h2>Payments & Deposits - Additional Rules</h2>
+            <ul>
+                <li>No withdrawal is allowed once a deposit is added to the bot balance.</li>
+                <li>Always generate a new payment address for every deposit. Payments made to old/used addresses are non-refundable.</li>
+                <li>Balance expires automatically if unused for 6 months — no refund or recovery possible.</li>
+                <li>Referral bonus of 10% is available but capped to a maximum of $1 per deposit.</li>
+            </ul>
+        </div>
+
+        <!-- Section 5 -->
+        <div class="section-card alert-box">
+            <h2>Abuse, Threats & False Claims</h2>
+            <ul>
+                <li>Any form of abuse, threats, blackmail, false allegations, or harassment will result in immediate termination of service.</li>
+                <li>Users engaging in chargeback abuse, false disputes, or malicious reporting will be permanently banned without notice.</li>
+                <li>Tg Tele Bot reserves the right to cooperate with payment processors if required.</li>
+            </ul>
+        </div>
+
+        <!-- Section 6 -->
+        <div class="section-card">
+            <h2>Stock & Support</h2>
+            <ul>
+                <li>We maintain multiple country stocks, available based on real-time availability.</li>
+                <li><strong>Support is ONLY provided for:</strong> OTP not received, Technical bot errors, and Order status issues.</li>
+                <li><strong>Support will NOT be provided for:</strong> Platform bans, Behavioural/spam locks, or wrong usage/mistakes made by the user.</li>
+            </ul>
+        </div>
+
+        <!-- Section 7 -->
+        <div class="section-card">
+            <h2>Limitation of Liability</h2>
+            <ul>
+                <li>To the maximum extent permitted by law, Tg Tele Bot's liability is limited strictly to the amount paid for a specific transaction.</li>
+                <li>Tg Tele Bot shall not be liable for indirect, incidental, or consequential damages.</li>
+            </ul>
+        </div>
+
+        <!-- Section 8 -->
+        <div class="section-card">
+            <h2>Changes to Terms</h2>
+            <ul>
+                <li>Tg Tele Bot reserves the right to modify, update, or replace these Terms & Conditions at any time.</li>
+                <li>Continued use of the service constitutes full acceptance of the updated terms.</li>
+            </ul>
+        </div>
+
+        <!-- Section 9 -->
+        <div class="section-card">
+            <h2>Final Acceptance</h2>
+            <ul>
+                <li>By depositing funds or purchasing any product from Tg Tele Bot, you confirm you have read, understood, and accepted all Terms & Conditions.</li>
+                <li>You acknowledge that no refunds, replacements, or disputes will be entertained.</li>
+                <li>You agree that all purchases are made entirely at your own risk.</li>
+            </ul>
+        </div>
+
+        <!-- Full Acceptance Warning -->
+        <div class="section-card alert-box">
+            <h2>Full Acceptance Required</h2>
+            <p style="color: var(--text-muted); font-size: 14px; text-align: justify;">
+                By purchasing or using our services, you automatically agree to these Terms & Conditions in their entirety. Failure to comply with any term may result in account suspension, service termination, or permanent ban without refund.
+            </p>
+        </div>
+
+        <!-- Footer / Links -->
+        <div class="footer">
+            <h2 style="justify-content: center; color: #fff;">Official Links</h2>
+            <div class="links-container">
+                <a href="https://t.me/tgtelebot" class="btn" target="_blank">🤖 Official Bot</a>
+                <a href="https://t.me/tgtelebot" class="btn" target="_blank">📢 Official Channel</a>
+                <a href="https://t.me/tgtelebot" class="btn" target="_blank">👨‍💻 Support Contact</a>
+            </div>
+            <p style="margin-top: 30px; font-size: 12px; color: #555;">&copy; 2024-2025 Tg Tele Bot. All Rights Reserved.</p>
+        </div>
+
+    </div>
+
+    <!-- Scroll Animation Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            const cards = document.querySelectorAll('.section-card, .footer');
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
