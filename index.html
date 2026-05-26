@@ -9,17 +9,17 @@
 
         :root {
             --bg-color: #030303;
-            --card-bg: rgba(18, 18, 18, 0.7);
-            --card-border: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(15, 15, 17, 0.75);
+            --card-border: rgba(255, 255, 255, 0.04);
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.35);
+            --accent-glow: rgba(59, 130, 246, 0.25);
             --danger: #ef4444;
-            --danger-glow: rgba(239, 68, 68, 0.25);
+            --danger-glow: rgba(239, 68, 68, 0.15);
             --success: #10b981;
-            --success-glow: rgba(16, 185, 129, 0.25);
-            --neon-border: rgba(59, 130, 246, 0.15);
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --neon-border: rgba(59, 130, 246, 0.12);
         }
 
         * {
@@ -30,15 +30,53 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
             line-height: 1.7;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 40%);
-            background-attachment: fixed;
+            position: relative;
+        }
+
+        /* --- Animated Premium Motion Background --- */
+        .bg-glow-1 {
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -2;
+            animation: floatGlow1 25s infinite alternate ease-in-out;
+        }
+
+        .bg-glow-2 {
+            position: fixed;
+            bottom: -20%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.04) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -2;
+            animation: floatGlow2 20s infinite alternate ease-in-out;
+        }
+
+        @keyframes floatGlow1 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, 40px) scale(1.1); }
+            100% { transform: translate(-40px, 80px) scale(0.9); }
+        }
+
+        @keyframes floatGlow2 {
+            0% { transform: translate(0, 0) scale(0.9); }
+            50% { transform: translate(-60px, -40px) scale(1.05); }
+            100% { transform: translate(40px, -80px) scale(1); }
         }
 
         /* Smooth Custom Scrollbar */
@@ -73,6 +111,7 @@
             position: relative;
             display: inline-block;
             margin-bottom: 25px;
+            animation: float 6s ease-in-out infinite;
         }
 
         .logo {
@@ -80,10 +119,9 @@
             height: 140px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.08);
             position: relative;
             z-index: 2;
-            transition: transform 0.5s ease;
         }
 
         .logo-glow {
@@ -118,8 +156,8 @@
         /* --- Glassmorphism Sections --- */
         .section-card {
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid var(--card-border);
             border-radius: 20px;
             padding: 30px;
@@ -154,13 +192,13 @@
         }
 
         .section-card:hover {
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.25);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.65);
+            transform: translateY(-2px);
         }
 
         h2 {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 700;
             color: var(--accent);
             margin-bottom: 20px;
@@ -168,16 +206,6 @@
             align-items: center;
             gap: 12px;
             letter-spacing: -0.3px;
-        }
-
-        h2::before {
-            content: '';
-            display: block;
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 12px var(--accent);
         }
 
         ul {
@@ -189,7 +217,7 @@
             padding-left: 24px;
             margin-bottom: 16px;
             color: var(--text-muted);
-            font-size: 15px;
+            font-size: 14.5px;
             font-weight: 400;
             transition: color 0.3s ease;
         }
@@ -216,20 +244,15 @@
             color: #e5e7eb;
         }
 
-        /* --- Warn/Alert Card Theme --- */
+        /* --- Card Color Themes --- */
         .alert-box {
-            background: rgba(239, 68, 68, 0.02);
-            border: 1px solid rgba(239, 68, 68, 0.15);
-            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.05);
+            background: rgba(239, 68, 68, 0.015);
+            border: 1px solid rgba(239, 68, 68, 0.12);
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.03);
         }
 
         .alert-box h2 {
             color: var(--danger);
-        }
-
-        .alert-box h2::before {
-            background-color: var(--danger);
-            box-shadow: 0 0 12px var(--danger);
         }
 
         .alert-box ul li::before {
@@ -237,23 +260,17 @@
         }
 
         .alert-box:hover {
-            border-color: rgba(239, 68, 68, 0.35);
+            border-color: rgba(239, 68, 68, 0.25);
         }
 
-        /* --- Secure/Verify Theme --- */
         .secure-box {
-            background: rgba(16, 185, 129, 0.02);
-            border: 1px solid rgba(16, 185, 129, 0.15);
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.05);
+            background: rgba(16, 185, 129, 0.015);
+            border: 1px solid rgba(16, 185, 129, 0.12);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.03);
         }
 
         .secure-box h2 {
             color: var(--success);
-        }
-
-        .secure-box h2::before {
-            background-color: var(--success);
-            box-shadow: 0 0 12px var(--success);
         }
 
         .secure-box ul li::before {
@@ -261,7 +278,7 @@
         }
 
         .secure-box:hover {
-            border-color: rgba(16, 185, 129, 0.35);
+            border-color: rgba(16, 185, 129, 0.25);
         }
 
         /* --- Footer Section --- */
@@ -313,7 +330,35 @@
             transform: translateY(-2px);
         }
 
-        /* --- Animations & Effects --- */
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        /* --- Screen Size Adaptations --- */
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 15px;
+            }
+
+            .section-card {
+                padding: 22px;
+                margin-bottom: 20px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 17px;
+            }
+
+            ul li {
+                font-size: 13.5px;
+            }
+        }
+
+        /* --- Keyframe Animations --- */
         @keyframes pulse-glow {
             0% { transform: scale(1); opacity: 0.5; }
             50% { transform: scale(1.05); opacity: 0.8; }
@@ -326,13 +371,13 @@
             100% { transform: translateY(0px); }
         }
 
-        .logo-container {
-            animation: float 5s ease-in-out infinite;
-        }
-
     </style>
 </head>
 <body>
+
+    <!-- Dynamic Background Motion Blobs -->
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
 
     <div class="container">
         
@@ -342,101 +387,152 @@
                 <div class="logo-glow"></div>
                 <img src="https://i.ibb.co/pvhhdsMM/x.jpg" alt="Fresh Tg Logo" class="logo">
             </div>
-            <h1>Fresh Tg bot</h1>
-            <p class="subtitle">Official Terms, Conditions & Purchase Policies</p>
+            <h1>Fresh Tg Sales</h1>
+            <p class="subtitle">Official Terms, Conditions & Usage Policies</p>
         </div>
 
         <!-- Section 1 -->
         <div class="section-card">
-            <h2>General Usage Guide</h2>
+            <h2>📖 Bot Usage & Operations</h2>
             <ul>
-                <li>Navigate cleanly through the interface using the designated inline menu buttons.</li>
-                <li>Verify your preferred country coordinates, years, and categories prior to committing orders.</li>
-                <li>A sufficient native balance is required on-screen before any session acquisition can be generated.</li>
-                <li>Make sure to strictly adhere to instructions regarding configuration and setup when adding accounts.</li>
+                <li><strong>Menu Navigation:</strong> Access bot services strictly using the built-in inline button interface.</li>
+                <li><strong>Configuration Checks:</strong> Ensure the selected country, registration year, and account specifications match your structural requirements before ordering.</li>
+                <li><strong>Balance Prerequisites:</strong> Sufficient store balance must be credited to your account before generating credential parameters.</li>
+                <li><strong>Operational Setup:</strong> Carefully review and execute configuration instructions when adding virtual credentials to your native client software.</li>
             </ul>
         </div>
 
         <!-- Section 2: Server 1 & Server 2 Policy -->
         <div class="section-card alert-box">
-            <h2>Server 1 & Server 2 Policy (Warranties)</h2>
+            <h2>📡 Server 1 & Server 2 Guidelines</h2>
             <ul>
-                <li><strong>OTP Guarantee Only:</strong> Our absolute responsibility is limited strictly to delivering the verification code (OTP). Once the OTP is retrieved and displayed on the interface, the purchase is marked final.</li>
-                <li><strong>Zero Longevity Warranties:</strong> We carry zero warranty regarding account lifespan. Telegram accounts are highly sensitive to actions, network proxies, and device profiles.</li>
-                <li><strong>No Post-OTP Refunds:</strong> Absolutely no refunds, balance returns, or replacements will be rendered if an account is subsequently logged out, banned, locked, or restricted.</li>
-                <li>All sessions on Server 1 and Server 2 are sold as temporary setups meant primarily for automation, bulk setups, or advertising. All usage risks rest entirely on the buyer.</li>
+                <li><strong>OTP delivery Boundaries:</strong> Our service capability is strictly limited to delivering the authorization code (OTP). Displaying the code inside the bot completes administrative fulfillment.</li>
+                <li><strong>Longevity Exclusions:</strong> No warranties are provided regarding account lifespan. Virtual credentials are fundamentally subject to regional parameters, proxy behaviors, and third-party security routines.</li>
+                <li><strong>Refund Policy:</strong> Once the OTP code has been generated and displayed on-screen, requests for balance reinstatements, cancellations, or transfers will not be processed under any circumstances.</li>
+                <li><strong>Intended Usage:</strong> All accounts provided across Server 1 and Server 2 are designed for structured testing, automation, or marketing configurations. All associated use cases are executed at the owner's risk.</li>
             </ul>
         </div>
 
-        <!-- Section 3: Deposit & Wallet Rules (Anti-Fraud) -->
-        <div class="section-card secure-box">
-            <h2>Payments & Deposits - Strict Anti-Fraud Rules</h2>
-            <ul>
-                <li><strong>No Refunds:</strong> Any funds successfully added to your bot profile wallet are completely non-refundable and cannot be withdrawn.</li>
-                <li><strong>Dynamic Rates:</strong> Conversion parameters (USDT/RUB/INR) are dynamically processed based on market metrics and can adjust without warning.</li>
-                <li><strong>Zero Tolerance for Value Spoofing:</strong> When executing manual deposit verifications, you must input the exact currency value paid. If you pay ₹10 but type ₹20 inside the approval console, your transaction will be permanently rejected, your payment will be forfeited, and your account will be permanently banned.</li>
-                <li><strong>Proof of Payment:</strong> All manual verifications require an unmodified, clean, full-screen receipt capture showing valid transaction reference values (UTR, transaction hashes, or reference codes).</li>
-                <li><strong>Old Address warning:</strong> Always generate a clean deposit address context for each unique payment. Repeating transactions to old addresses will result in a permanent loss of funds.</li>
-                <li><strong>Inactivity Expiry:</strong> Wallet balances left fully inactive/unused for more than 6 consecutive months will expire automatically. No recoveries are possible.</li>
-            </ul>
-        </div>
-
-        <!-- Section 4: Account Seller Terms -->
-        <div class="section-card alert-box">
-            <h2>Upload & Seller Terms (Server 2)</h2>
-            <ul>
-                <li><strong>Invalid Account Rejections:</strong> Sellers must upload verified, fully functional session files. If an account session is declared dead, invalid, locked, or restricted during system checks, zero payouts will occur.</li>
-                <li><strong>Clawback & Recovery Penalty:</strong> If a seller re-claims, recovers, or logs back into an account after listing or selling it, they will be banned, their balance will be cleared, and their user details will be forwarded to our community blacklist.</li>
-                <li><strong>Hold Windows:</strong> System checks are processed automatically under a strict 10-minute hold window. Funds are only credited to the Sales Balance once this hold period clears successfully.</li>
-            </ul>
-        </div>
-
-        <!-- Section 5: Support Restrictions -->
+        <!-- Section 3: Proxy / VPN Warning -->
         <div class="section-card">
-            <h2>Customer Support Boundaries</h2>
+            <h2>🌐 Proxy & Network Environment Warning</h2>
             <ul>
-                <li><strong>What Support Covers:</strong> Assistance is provided exclusively for payment gateway failures, technical errors, and delivery failures.</li>
-                <li><strong>What Support Denies:</strong> No support will be provided for post-OTP login problems, platform-side bans, account restrictions, self-made configuration mistakes, or spam block issues.</li>
-                <li><strong>Support Etiquette:</strong> Any form of verbal abuse, blackmail, threats of false dispute reporting, or hostile behavior directed at our administrators will lead to immediate banishment and forfeiture of balance.</li>
+                <li><strong>Proxy Vulnerability:</strong> Low-reputation VPN networks, public data proxies, server-center IPs, or rapid geolocation changes will trigger immediate, automatic restrictions from Telegram.</li>
+                <li><strong>Network Responsibility:</strong> Users assume full, sole responsibility for procuring and configuring clean, high-quality, residential network proxies post-purchase.</li>
+                <li><strong>System Bans:</strong> Technical failures, locks, or credential restrictions caused by poor proxy hygiene or abusive client setups are ineligible for administrative replacement.</li>
             </ul>
         </div>
 
-        <!-- Section 6: Stock & Availability -->
-        <div class="section-card">
-            <h2>Stock Levels & Replenishments</h2>
-            <ul>
-                <li>Catalog indexes are kept updated dynamically on a 30-second loop. Global availability dictates stock listings.</li>
-                <li>Out-of-stock listings are restocked as coordinates become available in the market. We recommend checking back regularly or using manual refreshing buttons inside the catalog.</li>
-            </ul>
-        </div>
-
-        <!-- Section 7: Limitation of Liability -->
-        <div class="section-card alert-box">
-            <h2>Limitation of Liability</h2>
-            <ul>
-                <li>Our operational liability is capped strictly to the exact amount paid for a specific transaction.</li>
-                <li>We do not assume liability for business losses, personal data loss, or secondary restrictions resulting from account bans or bot-side downtimes.</li>
-            </ul>
-        </div>
-
-        <!-- Section 8: Final Acceptance -->
+        <!-- Section 4: Account Security Responsibility -->
         <div class="section-card secure-box">
-            <h2>User Acceptance Confirmation</h2>
+            <h2>🛡️ Account Security & Maintenance</h2>
             <ul>
-                <li>By adding funds, executing purchases, or uploading accounts, you acknowledge that you have read, understood, and agreed to this terms manifest in its entirety.</li>
-                <li>You acknowledge that all platform transactions are performed completely at your own risk.</li>
+                <li><strong>Post-Delivery Ownership:</strong> Buyers are fully responsible for securing accounts immediately after the delivery of credentials.</li>
+                <li><strong>Recommended Measures:</strong> We highly recommend enabling dynamic Two-Factor Authentication (2FA), configuring secure email recovery parameters, and using stable, dedicated IP address pools.</li>
+                <li><strong>Limitation of Risk:</strong> The platform is not liable for data loss, session termination, or recovery failures resulting from inadequate security management.</li>
+            </ul>
+        </div>
+
+        <!-- Section 5: Prohibited Activities -->
+        <div class="section-card alert-box">
+            <h2>🚫 Prohibited Platform Activities</h2>
+            <ul>
+                <li><strong>Abusive Usage:</strong> Purchased credentials may not be used for fraudulent activities, phishing campaigns, targeted harassment, illicit materials propagation, or server spamming.</li>
+                <li><strong>Regulatory Cooperation:</strong> Any valid, regulatory law enforcement requests or structural investigations into illicit actions will be reviewed in strict accordance with applicable legal guidelines.</li>
+                <li><strong>Privilege Revocation:</strong> We reserve the right to suspend or block access for user IDs associated with highly anomalous, malicious, or illegal activities.</li>
+            </ul>
+        </div>
+
+        <!-- Section 6: Payments & Deposits -->
+        <div class="section-card secure-box">
+            <h2>💳 Financial Policy & Manual Deposits</h2>
+            <ul>
+                <li><strong>Irreversible Deposits:</strong> Funds successfully added to your profile wallet are consumed immediately and cannot be withdrawn or returned.</li>
+                <li><strong>Keypad Integrity:</strong> Manual payment requests must state the exact numeric amount settled. Fraudulent or manipulated payment submissions may result in rejection, suspension, or permanent termination of platform access.</li>
+                <li><strong>Receipt Verification:</strong> Manual deposit claims must be accompanied by an unmodified, full-page screenshot clearly displaying the transaction ID, date, and UTR.</li>
+                <li><strong>Rotational Addresses:</strong> Always generate a fresh payment address before initiating deposits. Transfers to previous or expired addresses are unrecoverable.</li>
+                <li><strong>Balance Expiration:</strong> Store credits left completely unused for over 6 consecutive months will be retired automatically, with no recovery options available.</li>
+            </ul>
+        </div>
+
+        <!-- Section 7: Chargeback & Payment Disputes -->
+        <div class="section-card alert-box">
+            <h2>⚖️ Chargebacks & Payment Disputes</h2>
+            <ul>
+                <li><strong>Dispute Penalty:</strong> Initiating fraudulent chargebacks, bad-faith disputes, or false payment claims will result in immediate termination of store privileges and permanent IP bans.</li>
+                <li><strong>Evidence Disclosure:</strong> During dispute evaluations, transaction history logs, verification metadata, and tracking identifiers will be submitted to the processing networks.</li>
+            </ul>
+        </div>
+
+        <!-- Section 8: Seller Upload Rules -->
+        <div class="section-card">
+            <h2>🤝 Seller Terms & Listing Rules</h2>
+            <ul>
+                <li><strong>Session Integrity:</strong> Sellers must list strictly valid, uncompromised session credentials. Sessions found to be dead, blocked, or recovered during initial validation checks are rejected.</li>
+                <li><strong>Credential Hijacking:</strong> If a seller re-accesses or recovers a listing after its sale, their account will be permanently banned and their details will be published to global industry blacklists.</li>
+                <li><strong>Hold Windows:</strong> Funds from sales are held in a strict 10-minute escrow loop during checking phases and are credited to your withdrawable balance once cleared.</li>
+            </ul>
+        </div>
+
+        <!-- Section 9: Service Availability -->
+        <div class="section-card">
+            <h2>⚙️ Service Availability & Maintenance</h2>
+            <ul>
+                <li><strong>No Uptime Guarantee:</strong> Platform services, third-party API dependencies, and real-time catalog connections are not guaranteed to be active 24/7.</li>
+                <li><strong>Service Pauses:</strong> Routine server maintenance, catalog changes, network outages, or API disruptions may occur at any time without prior notice.</li>
+            </ul>
+        </div>
+
+        <!-- Section 10: Privacy & Data Handling -->
+        <div class="section-card">
+            <h2>🔒 Privacy & Data Handling</h2>
+            <ul>
+                <li><strong>Technical Logs:</strong> Limited connection metadata and security records are stored strictly for fraud detection and service optimization.</li>
+                <li><strong>No Permanent Storage:</strong> We do not guarantee long-term retention of delivery logs, active OTP histories, or uploaded seller files. Users must secure their own backups.</li>
+            </ul>
+        </div>
+
+        <!-- Section 11: Digital Goods Disclaimer -->
+        <div class="section-card alert-box">
+            <h2>📦 Digital Goods Disclaimer</h2>
+            <ul>
+                <li><strong>Digital Classification:</strong> All store items and virtual coordinates are classified as digital goods and services under consumer protection regulations.</li>
+                <li><strong>Final Sale:</strong> Due to the instant and irreversible nature of virtual coordinate deliveries, refunds are unavailable once the credential delivery has been completed.</li>
+            </ul>
+        </div>
+
+        <!-- Section 12: Modification of Terms -->
+        <div class="section-card">
+            <h2>📝 Modification of Policies</h2>
+            <ul>
+                <li>We reserve the right to modify, adjust, or completely replace these Terms & Conditions at any point.</li>
+                <li>Your continued engagement with our bot and platform resources indicates your binding acceptance of the updated rules.</li>
+            </ul>
+        </div>
+
+        <!-- Section 13: Agreement Confirmation -->
+        <div class="section-card secure-box">
+            <h2>✅ Agreement & Confirmation</h2>
+            <ul>
+                <li>By maintaining an active profile or utilizing our catalog, you automatically confirm you have read, understood, and agreed to these Terms in their entirety.</li>
+                <li>If you do not agree with any of the terms or policies listed above, you must discontinue your use of our services immediately.</li>
             </ul>
         </div>
 
         <!-- Footer / Links -->
         <div class="footer">
-            <h2 style="justify-content: center; color: #fff;">Official Links</h2>
+            <h2 style="justify-content: center; color: #fff;">Official Directory</h2>
             <div class="links-container">
                 <a href="https://t.me/FFI1PBot" class="btn" target="_blank">🤖 Official Bot</a>
-                <a href="https://t.me/Freshtgsales" class="btn" target="_blank">📢 Official Channel</a>
+                <a href="https://t.me/FreshTgSals" class="btn" target="_blank">📢 Official Channel</a>
                 <a href="https://t.me/Telerwbot" class="btn" target="_blank">👨‍💻 Support Contact</a>
             </div>
-            <p style="margin-top: 35px; font-size: 13px; color: #555;">&copy; 2024-2025 Fresh Tg Sales. All Rights Reserved.</p>
+            <p style="margin-top: 35px; font-size: 13px; color: #444; font-weight: 500;">
+                Terms Version 2.4 &bull; Last Updated: May 2026
+            </p>
+            <p style="margin-top: 10px; font-size: 12px; color: #333;">
+                &copy; 2024-2026 Fresh Tg Sales. All Rights Reserved.
+            </p>
         </div>
 
     </div>
@@ -447,7 +543,7 @@
             const observerOptions = {
                 root: null,
                 rootMargin: '0px',
-                threshold: 0.1
+                threshold: 0.05
             };
 
             const observer = new IntersectionObserver((entries, observer) => {
@@ -466,4 +562,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
