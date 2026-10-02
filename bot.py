@@ -9,7 +9,8 @@ import csv
 import zipfile
 import shutil
 import html
-from urllib.parse import quote, urlparse
+import json
+from urllib.parse import quote, urlparse, urlunparse
 import imaplib
 import email
 import ssl
@@ -124,6 +125,7 @@ def get_user_lock(uid):
 
 AUTO_WORKERS = set()
 AUTO_WORKER_SEMAPHORE = asyncio.Semaphore(3)
+AUTO_POLLER_TASK = None
 
 def setting(key, default=""):
     row = cur.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
@@ -302,6 +304,29 @@ def setup_db():
     auto_columns = {row[1] for row in cur.execute("PRAGMA table_info(auto_deposits)")}
     if "qr_message_id" not in auto_columns:
         cur.execute("ALTER TABLE auto_deposits ADD COLUMN qr_message_id INTEGER")
+    # Older releases made (payable_paise, status) unique.  That prevents a
+    # later customer from paying the same unique amount after a completed
+    # deposit, so migrate it to the intended per-active-deposit allocation.
+    auto_sql = cur.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='auto_deposits'").fetchone()[0]
+    if "UNIQUE(payable_paise, status)" in auto_sql.replace("\n", " "):
+        cur.executescript("""
+        ALTER TABLE auto_deposits RENAME TO auto_deposits_legacy;
+        CREATE TABLE auto_deposits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+            requested_paise INTEGER NOT NULL, payable_paise INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'PENDING', utr TEXT, transaction_id TEXT,
+            fampay_id TEXT, created_at TEXT NOT NULL, expires_at TEXT NOT NULL,
+            processing_at TEXT, completed_at TEXT, cancelled_at TEXT, cancelled_by INTEGER,
+            verification_note TEXT, qr_message_id INTEGER
+        );
+        INSERT INTO auto_deposits (id,user_id,requested_paise,payable_paise,status,utr,transaction_id,fampay_id,created_at,expires_at,processing_at,completed_at,cancelled_at,cancelled_by,verification_note,qr_message_id)
+        SELECT id,user_id,requested_paise,payable_paise,status,utr,transaction_id,fampay_id,created_at,expires_at,processing_at,completed_at,cancelled_at,cancelled_by,verification_note,qr_message_id
+        FROM auto_deposits_legacy;
+        DROP TABLE auto_deposits_legacy;
+        """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_auto_deposits_user_status ON auto_deposits(user_id, status)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_auto_deposits_expiry ON auto_deposits(status, expires_at)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_auto_deposits_identifiers ON auto_deposits(utr, transaction_id, fampay_id)")
     cur.execute("""CREATE TABLE IF NOT EXISTS paytm_orders (
         order_id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, amount INTEGER NOT NULL,
         status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL
@@ -655,20 +680,71 @@ async def log_primary_purchase(uid, country, price, amount, year, qty, phone=Non
 # ================= SMM PANEL SERVICE =================
 def smm_enabled(): return setting("smm_system_enabled", "0") == "1"
 def smm_api_url(url):
-    url = (url or "").strip()
+    """Return the provider's actual SMM API endpoint, not its panel home page."""
+    url = html.unescape((url or "").strip()).strip("<> ")
+    # Admins frequently paste a Markdown link or a URL followed by punctuation.
+    match = re.search(r"https?://[^\s<>]+", url, re.I)
+    if match:
+        url = match.group(0).rstrip(".,;!?)>]}\"'")
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc: raise ValueError("Enter a valid HTTP(S) API URL.")
-    return url
+    if parsed.username or parsed.password:
+        raise ValueError("API URL must not contain credentials; enter the API key separately.")
+    if parsed.query or parsed.fragment:
+        raise ValueError("Enter the API endpoint without query parameters or fragments.")
+    path = parsed.path.rstrip("/")
+    # The standard SMM API v2 endpoint is normally omitted when an admin copies
+    # the provider's dashboard URL.  Preserve providers that use a custom path.
+    if not path:
+        path = "/api/v2"
+    return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), path, "", "", ""))
+
+def smm_error_message(response_body, fallback):
+    """Turn common provider error payloads into useful, safe admin feedback."""
+    try:
+        parsed = json.loads(response_body)
+        if isinstance(parsed, dict):
+            message = parsed.get("error") or parsed.get("message") or parsed.get("detail")
+            if message:
+                return str(message)
+    except (TypeError, ValueError):
+        pass
+    return fallback
 
 async def smm_request(panel, action, **payload):
     data = {"key": panel[3], "action": action, **payload}
     timeout = aiohttp.ClientTimeout(total=30)
-    async with aiohttp.ClientSession(timeout=timeout) as session:
-        async with session.post(panel[2], data=data) as response:
-            response.raise_for_status()
-            result = await response.json(content_type=None)
+    headers = {"Accept": "application/json", "User-Agent": "Tgtele-SMM/1.0"}
+    try:
+        async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
+            async with session.post(panel[2], data=data, allow_redirects=True) as response:
+                body = await response.text()
+                if response.status >= 400:
+                    raise ValueError(f"Provider HTTP {response.status}: {smm_error_message(body, response.reason or 'request failed')}")
+    except aiohttp.ClientError as exc:
+        raise ValueError(f"Could not reach provider API: {exc}") from exc
+    try:
+        result = json.loads(body)
+    except ValueError as exc:
+        raise ValueError("Provider returned HTML/non-JSON. Check that the API URL ends in /api/v2.") from exc
     if isinstance(result, dict) and result.get("error"): raise ValueError(str(result["error"]))
     return result
+
+def normalize_saved_smm_urls():
+    """Upgrade old dashboard-only provider URLs saved before endpoint handling."""
+    changed = 0
+    for panel_id, old_url in cur.execute("SELECT id,api_url FROM smm_panels").fetchall():
+        try:
+            new_url = smm_api_url(old_url)
+        except ValueError:
+            logger.warning("SMM provider %s has an invalid saved API URL", panel_id)
+            continue
+        if new_url != old_url:
+            cur.execute("UPDATE smm_panels SET api_url=? WHERE id=?", (new_url, panel_id))
+            changed += 1
+    if changed:
+        db.commit()
+        logger.info("Normalized %s saved SMM provider API URL(s)", changed)
 
 def smm_charge(rate, profit):
     # Panel rates are conventionally USD per 1,000; wallet balances use whole INR.
@@ -703,7 +779,7 @@ async def smm_scan_panel(panel_id):
         cancel=1 if str(item.get("cancel", item.get("cancelable", ""))).lower() in ("1","true","yes") else 0
         cur.execute("""INSERT INTO smm_services(panel_id,external_id,category_id,name,rate,min_qty,max_qty,description,refill,cancel,raw_json)
         VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(panel_id,external_id) DO UPDATE SET category_id=excluded.category_id,name=excluded.name,rate=excluded.rate,min_qty=excluded.min_qty,max_qty=excluded.max_qty,description=excluded.description,refill=excluded.refill,cancel=excluded.cancel,raw_json=excluded.raw_json""",
-        (panel_id,ext,cat_id,str(item.get("name", "Unnamed")),float(item.get("rate",0) or 0),int(item.get("min",0) or 0),int(item.get("max",0) or 0),str(item.get("desc", item.get("description", "")) or ""),refill,cancel,__import__('json').dumps(item)))
+        (panel_id,ext,cat_id,str(item.get("name", "Unnamed")),float(item.get("rate",0) or 0),int(item.get("min",0) or 0),int(item.get("max",0) or 0),str(item.get("desc", item.get("description", "")) or ""),refill,cancel,json.dumps(item)))
         count+=1
     cur.execute("UPDATE smm_panels SET last_scanned_at=? WHERE id=?", (now_utc().isoformat(),panel_id)); db.commit()
     return count
@@ -774,7 +850,8 @@ async def smm_admin_action(event, action):
             f"<b>🏢 {html.escape(panel[1])}</b>\n\nStatus: {'🟢 ON' if panel[5] else '🔴 OFF'}\nMarkup: <b>{panel[4]}%</b>\nBalance: <b>{balance}</b>\nLast sync: <code>{panel[6] or 'Never'}</code>",
             buttons=[
                 [Button.inline('Provider OFF' if panel[5] else 'Provider ON', f'adm_smm_power|{pid}'), Button.inline('Set Markup', f'adm_smm_markup|{pid}')],
-                [Button.inline('Change API Key', f'adm_smm_key|{pid}'), Button.inline('🔄 Sync', f'adm_smm_scan|{pid}')],
+                [Button.inline('Change API URL', f'adm_smm_url|{pid}'), Button.inline('Change API Key', f'adm_smm_key|{pid}')],
+                [Button.inline('🔄 Sync', f'adm_smm_scan|{pid}')],
                 [Button.inline('💳 Balance', f'adm_smm_balance|{pid}'), Button.inline('Remove Provider', f'adm_smm_remove|{pid}')],
                 [Button.inline('Back', 'adm_smm_providers')],
             ],
@@ -834,8 +911,10 @@ async def smm_admin_action(event, action):
                 cur.execute('INSERT INTO smm_panels(name,api_url,api_key,profit_percent,created_at) VALUES(?,?,?,?,?)', (name, url, key, 0, now_utc().isoformat())); db.commit()
                 return await conv.send_message('✅ Provider saved with 0% markup. Use Set Markup to change it.')
             except AdminInputCancelled: return await conv.send_message('Cancelled.')
-    if action.startswith('smm_markup|') or action.startswith('smm_key|'):
-        pid = int(action.split('|')[1]); label = 'markup percentage (for example 20)' if action.startswith('smm_markup|') else 'new API key'
+    if action.startswith('smm_markup|') or action.startswith('smm_key|') or action.startswith('smm_url|'):
+        pid = int(action.split('|')[1])
+        label = ('markup percentage (for example 20)' if action.startswith('smm_markup|') else
+                 'new API URL (a base URL is converted to /api/v2)' if action.startswith('smm_url|') else 'new API key')
         async with bot.conversation(event.chat_id, timeout=600) as conv:
             await conv.send_message(f'Enter the {label}:\n\n<i>Send /cancel to abort.</i>')
             response = await conv.get_response(); value = (response.text or '').strip()
@@ -845,6 +924,8 @@ async def smm_admin_action(event, action):
                 except ValueError: raise ValueError('Markup must be a number.')
                 if not 0 <= markup <= 1000: raise ValueError('Markup must be between 0 and 1000%.')
                 cur.execute('UPDATE smm_panels SET profit_percent=? WHERE id=?', (markup, pid))
+            elif action.startswith('smm_url|'):
+                cur.execute('UPDATE smm_panels SET api_url=? WHERE id=?', (smm_api_url(value), pid))
             else:
                 if not value: raise ValueError('API key cannot be empty.')
                 cur.execute('UPDATE smm_panels SET api_key=? WHERE id=?', (value, pid))
@@ -916,6 +997,44 @@ def _test_imap_login():
         imap.select("INBOX", readonly=True)
     return True
 
+def _email_text(message):
+    """Extract readable text from both plain and multipart FamPay receipts."""
+    parts = []
+    for part in message.walk():
+        if part.get_content_type() not in ("text/plain", "text/html"):
+            continue
+        if "attachment" in str(part.get("Content-Disposition", "")).lower():
+            continue
+        try:
+            raw = part.get_payload(decode=True)
+            if raw:
+                parts.append(raw.decode(part.get_content_charset() or "utf-8", "replace"))
+        except (LookupError, UnicodeError):
+            continue
+    return html.unescape(re.sub(r"<[^>]+>", " ", " ".join(parts)))
+
+def _receipt_identifiers(text):
+    """Return FamPay/UPI identifiers and every INR amount stated in a receipt."""
+    text = re.sub(r"\s+", " ", text or " ")
+    amounts = []
+    for match in re.finditer(r"(?:₹|Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)", text, re.I):
+        try:
+            amounts.append(as_paise(match.group(1).replace(",", "")))
+        except ValueError:
+            continue
+    # Some receipt formats use an explicit amount label without a currency sign.
+    for match in re.finditer(r"\bamount(?:\s+of)?\s*[:\-]?\s*([\d,]+(?:\.\d{1,2})?)", text, re.I):
+        try:
+            amounts.append(as_paise(match.group(1).replace(",", "")))
+        except ValueError:
+            continue
+    utrs = re.findall(r"(?:UPI\s*(?:ref(?:erence)?\s*(?:no\.?)?)?|UTR(?:\s*no\.?)?|ref\s*no\.?)\s*[:#-]?\s*(\d{10,22})", text, re.I)
+    if not utrs:
+        utrs = re.findall(r"\b\d{12}\b", text)
+    fampay = re.findall(r"\bFMPIB[A-Z0-9]+\b", text, re.I)
+    transactions = re.findall(r"(?:transaction|txn)\s*id\s*[:#-]?\s*([A-Z0-9_-]{8,64})", text, re.I)
+    return amounts, utrs, fampay, transactions
+
 def _imap_matches(deposit):
     """Blocking IMAP scan. Only messages with a trustworthy received date in window qualify."""
     gmail, password = normalize_gmail_address(setting("fampay_gmail")), gmail_app_password()
@@ -934,7 +1053,9 @@ def _imap_matches(deposit):
             _, ids = imap.search(None, "SINCE", since)
             if not ids or not ids[0]:
                 return []
-            for msg_id in ids[0].split()[-200:]:
+            # Newest first means an incoming receipt is verified on the first
+            # poll instead of waiting behind an inbox full of older messages.
+            for msg_id in reversed(ids[0].split()[-200:]):
                 try:
                     _, data = imap.fetch(msg_id, "(RFC822)")
                     raw = next((x[1] for x in data if isinstance(x, tuple)), None)
@@ -946,18 +1067,16 @@ def _imap_matches(deposit):
                         stamp = stamp.astimezone(timezone.utc)
                     except Exception: continue
                     if not (created - timedelta(minutes=2) <= stamp <= expires + timedelta(minutes=2)): continue
-                    chunks = []
-                    for part in msg.walk():
-                        if part.get_content_type() in ("text/plain", "text/html"):
-                            try: chunks.append(part.get_payload(decode=True).decode(part.get_content_charset() or "utf-8", "replace"))
-                            except Exception: pass
-                    text = re.sub(r"<[^>]+>", " ", " ".join(chunks))
-                    amounts = re.findall(r"(?:₹|Rs\.?|INR)\s*([0-9]+(?:\.[0-9]{1,2})?)", text, re.I)
-                    if deposit[2] not in {as_paise(x) for x in amounts} if amounts else True: continue
-                    utr = next(iter(re.findall(r"\b\d{10,22}\b", text)), None)
-                    fmpi = next(iter(re.findall(r"\bFMPIB[A-Z0-9]+\b", text, re.I)), None)
-                    txn = fmpi or utr
-                    if amounts:
+                    subject = str(email.header.make_header(email.header.decode_header(msg.get("Subject", ""))))
+                    amounts, utrs, fampay, transactions = _receipt_identifiers(subject + " " + _email_text(msg))
+                    if deposit[2] not in set(amounts):
+                        continue
+                    utr = utrs[0] if utrs else None
+                    fmpi = fampay[0].upper() if fampay else None
+                    txn = (transactions[0].upper() if transactions else fmpi or utr)
+                    # An exact unique amount plus a receipt identifier prevents
+                    # arbitrary promotional emails from crediting a wallet.
+                    if amounts and (utr or fmpi or txn):
                         found.append((utr, fmpi.upper() if fmpi else None, txn.upper() if txn else None, stamp.isoformat()))
                 except Exception:
                     continue
@@ -998,7 +1117,23 @@ async def poll_auto_deposit(dep_id):
             await expire_auto_deposit(dep_id)
             return
         if await run_auto_verification(dep_id): return
-        await asyncio.sleep(20)
+        await asyncio.sleep(5)
+
+async def auto_payment_poller():
+    """Resume pending FamPay checks after restarts and scan active QRs every 5s."""
+    while True:
+        try:
+            now = now_utc().isoformat()
+            expired = cur.execute("SELECT id FROM auto_deposits WHERE status IN ('PENDING','PROCESSING') AND expires_at<?", (now,)).fetchall()
+            active = cur.execute("SELECT id FROM auto_deposits WHERE status IN ('PENDING','PROCESSING') AND expires_at>=?", (now,)).fetchall()
+            for (dep_id,) in expired:
+                await expire_auto_deposit(dep_id)
+            for (dep_id,) in active:
+                if dep_id not in AUTO_WORKERS:
+                    asyncio.create_task(run_auto_verification(dep_id))
+        except Exception:
+            logger.exception("automatic FamPay poller failed")
+        await asyncio.sleep(5)
 
 def paytm_email_deposit(order_row):
     order_id, uid, amount, status, created_at, payable_paise, expires_at, qr_message_id = order_row
@@ -1987,12 +2122,15 @@ async def admin_actions(event):
                 value = (await get_reply("Enter the new value:")).text.strip()
                 if key in ("auto_min_deposit", "auto_max_deposit"): as_paise(value)
                 elif key == "auto_expire_minutes" and (not value.isdigit() or not 1 <= int(value) <= 1440): raise ValueError("Expiry must be 1 to 1440 minutes")
+                elif key == "auto_verify_timeout" and (not value.isdigit() or not 5 <= int(value) <= 120): raise ValueError("Verification timeout must be 5 to 120 seconds")
                 elif key.startswith("auto_") and (not value.isdigit() or int(value) < 0): raise ValueError("Expected a non-negative integer")
                 elif key == "fampay_gmail":
                     value = normalize_gmail_address(value)
                     if "@" not in value: raise ValueError("Invalid Gmail address")
                 elif key == "fampay_upi_id":
                     value = value.replace(" ", "").strip()
+                    if not re.fullmatch(r"[A-Za-z0-9._-]{2,256}@[A-Za-z0-9._-]{2,64}", value):
+                        raise ValueError("Invalid UPI ID. Example: yourname@fam")
                 set_setting(key, value); audit("FAMPAY_SETTINGS_CHANGED", uid, None, f"changed {key}"); db.commit()
                 await conv.send_message(f"✅ Setting <b>{key}</b> saved as: <code>{html.escape(value)}</code>")
             elif action_data == "fampaypassword" and has_perm(uid, 'p_settings'):
@@ -2978,7 +3116,11 @@ async def handle_callback_query(e):
     except Exception as ex: print(f"Callback Error: {ex}")
 
 async def main():
+    global AUTO_POLLER_TASK
     print("✅ ULTIMATE ADVANCED HTML BOT STARTED SUCCESSFULLY")
+    normalize_saved_smm_urls()
+    if AUTO_POLLER_TASK is None or AUTO_POLLER_TASK.done():
+        AUTO_POLLER_TASK = asyncio.create_task(auto_payment_poller())
     await bot.run_until_disconnected()
 
 if __name__ == '__main__':
